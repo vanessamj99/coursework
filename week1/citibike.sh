@@ -4,12 +4,14 @@
 #
 
 # count the number of unique stations
+cut -d, -f5 201402-citibike-tripdata.csv | sort | uniq | cat -n
 329
 
 # count the number of unique bikes
 5699
 
 # count the number of trips per day
+ cut -d, -f2 201402-citibike-tripdata.csv  | cut -d" " -f1 |sort | uniq -c | sort -n
   876 "2014-02-13
    2261 "2014-02-15
    2600 "2014-02-03
@@ -40,15 +42,23 @@
   13816 "2014-02-02
 
 # find the day with the most rides
+cut -d, -f2 201402-citibike-tripdata.csv  | cut -d" " -f1 |sort | uniq -c | sort -nr
+
 13816 -> 2014-02-02
 
 # find the day with the fewest rides
+cut -d, -f2 201402-citibike-tripdata.csv  | cut -d" " -f1 |sort | uniq -c | sort -n
+
 876 -> 2014-02-13
 
 # find the id of the bike with the most rides
+cut -d, -f12 201402-citibike-tripdata.csv | sort|uniq -c | sort -nr
+
 "20837" -> 130
 
 # count the number of rides by gender and birth year
+ cut -d, -f15,14  201402-citibike-tripdata.csv | sort | uniq -c | sort -n
+
 1 "1913","1"
       1 "1921","1"
       1 "1932","1"
@@ -194,8 +204,11 @@
 
 
 # count the number of trips that start on cross streets that both contain numbers (e.g., "1 Ave & E 15 St", "E 39 St & 2 Ave", ...)
+cut -d, -f5  201402-citibike-tripdata.csv | grep '[0-9].*[&].*[0-9].*' |wc -l     
 90549
 
 
 # compute the average trip duration
+cut -d, -f1 201402-citibike-tripdata.csv | grep '"[0-9]*"' | cut -d"\"" -f2 | awk '{sum += $1; count++} END {printf "Average trip duration: "; printf sum/count ; printf "\n"}'
+
 874.52
