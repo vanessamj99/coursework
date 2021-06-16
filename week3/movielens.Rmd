@@ -43,12 +43,18 @@ head(ratings) %>% kable()
 # aggregate ratings by movie, computing mean and number of ratings
 # hint: use the n() function for easy counting within a group
 ```
-
+#ratings_by_movie <- ratings %>% group_by(movie_id) %>% summarize(num_ratings = n())
+#ratings_mean = mean(ratings_by_movie$num_ratings)
+#ratings_mean
+#936.5977
+amount_of_movies <- ratings %>% group_by(movie_id)%>% summarize(count = n(),mean = mean(rating))
 ```{r dist-movie-popularity}
 # plot distribution of movie popularity (= number of ratings the movie received)
 # hint: try scale_x_log10() for a logarithmic x axis
 ```
-
+ratings %>% count(rating) %>% ggplot(aes(x = rating, y = n)) + geom_histogram(stat = "identity")
+ratings %>% group_by(movie_id) %>% summarize(count = n(), mean = mean(rating)) %>%
+ggplot(aes(x = count)) + geom_histogram() + scale_x_log10() + xlab("number of ratings per movie") + ylab("number of movies")
 ```{r dist-mean-ratings-by-movie}
 # plot distribution of mean ratings by movie https://speakerdeck.com/jhofman/modeling-social-data-lecture-2-introduction-to-counting?slide=28
 # hint: try geom_histogram and geom_density
