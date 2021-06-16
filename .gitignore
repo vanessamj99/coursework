@@ -7,9 +7,7 @@
 *.csv
 *.tsv
 *.RData
-<<<<<<< HEAD
 **/*.RData
-=======
->>>>>>> 7c1913c4c801fc90d9838fbb889ee76dec5ae0bb
 *.Rdata
 *.rdata
+*.dat
