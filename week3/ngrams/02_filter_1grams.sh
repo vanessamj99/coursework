@@ -5,5 +5,5 @@
 #   then filter out rows that match using grep -E, egrep, awk, or similar
 #   write results to year_counts.tsv
 
-gunzip googlebooks-eng-all-1gram-20120701-1.gz
-zless googlebooks-eng-all-1gram-20120701-1 | grep '[0-9]{4}'
+curl -O googlebooks-eng-all-1gram-20120701-1.gz
+less googlebooks-eng-all-1gram-20120701-1 | egrep '^(18|19)[0-9][0-9]\s' > year_counts.tsv
