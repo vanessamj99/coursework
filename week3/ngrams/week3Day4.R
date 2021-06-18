@@ -53,6 +53,15 @@ total_counts %>% filter(year >=1850)%>%ggplot()+
 
 #For each year term, find the year where its proportion of mentions peaks (hits its highest value). 
 #Store this in an intermediate dataframe.
+peak <- term_with_count %>% filter(year >= term) %>% group_by(term)%>%
+  filter(prop_per_year == max(prop_per_year)) %>% select(c("term","year","volume","prop_per_year"))
+
+#after years
+after_the_year <- term_with_count %>% filter(year >= term)
+
+after_and_peak <- after_the_year %>% left_join(peak, by= "term", suffix = c("","peak_")) %>% 
+  filter(year >= yearpeak_)
+
 
 
 ## Compute half-lifes
@@ -60,10 +69,13 @@ total_counts %>% filter(year >=1850)%>%ggplot()+
 #Now, for each year term, find the minimum number of years it takes for the proportion of mentions 
 #to decline from its peak value to half its peak value. Store this in an intermediate data frame.
 
+half_life <- after_and_peak %>% group_by(term) %>% filter(prop_per_year < prop_per_yearpeak_/2)%>%
+  summarize(half_life_ = min(year))
 
 
+half_life2 <- half_life %>% left_join(peak,by="term")%>% mutate(period = half_life_-year)
 ## Plot the inset of figure 3a
 
 #Plot the half-life of each term over time from 1850 to 2012. Each point should represent one year
 #term, and add a line to show the trend using `geom_smooth()`.
-
+half_life2 %>% ggplot() + geom_jitter(aes(x=term,y=period)) +geom_smooth(aes(x=term,y=period))
