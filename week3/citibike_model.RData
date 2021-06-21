@@ -1,0 +1,97 @@
+library(tidyverse)
+library(scales)
+library(modelr)
+library(lubridate)
+theme_set(theme_bw())
+options(repr.plot.width=4, repr.plot.height=3)
+trips_per_day <- read_tsv('trips_per_day.tsv')
+
+set.seed(30)
+
+# model with weekend
+#best model
+# plot the number of trips as a function of whether or not a day is a weekend
+trips_per_day %>%
+  ggplot(aes(x = wday(ymd), y = num_trips)) +
+  geom_point()
+# add a column to the dataframe to indicate if a day is a weekend
+trips_per_day_for_weekends <- trips_per_day %>% 
+  mutate(aWeekend = wday(ymd) %in% c(1,7))
+
+# split data with weekends 80-10-10
+num_days <- nrow(trips_per_day_for_weekends)
+num_train <- floor(num_days * 0.8)
+# randomly sample rows for the training set
+training_data <- sample(1:num_days, num_train, replace=F)
+# used to fit the model
+trips_per_day_for_weekends_train <- trips_per_day_for_weekends[training_data, ]
+# used to evaluate the fit and test
+trips_per_day_for_weekends_validate_and_test <- trips_per_day_for_weekends[-training_data, ]
+num_days_test_and_validate <-nrow(trips_per_day_for_weekends_validate_and_test)
+
+num_validate <- floor(num_days_test_and_validate *0.5)
+# randomly sample rows for the validation set
+validation <- sample(1:num_days_test_and_validate, num_validate, replace=F) 
+# used to validate the model
+trips_per_day_for_weekends_validate <- trips_per_day_for_weekends_validate_and_test[validation, ]
+# used to test the model
+trips_per_day_for_weekends_test <- trips_per_day_for_weekends_validate_and_test[-validation, ]
+# model for each polynomial degree with min temp and weekends
+
+K <- 1:8
+train_err <- c()
+validate_err <- c()
+for (k in K) {
+  
+  # fit on the training data
+  model_wknd <- lm(num_trips ~ poly(tmin, k, raw=T) + aWeekend, data=trips_per_day_for_weekends_train)
+  
+  # evaluate on the training data
+  train_err[k] <- sqrt(mean((predict(model_wknd, trips_per_day_for_weekends_train) - trips_per_day_for_weekends_train$num_trips)^2))
+  
+  # evaluate on the validate data
+  validate_err[k] <- sqrt(mean((predict(model_wknd, trips_per_day_for_weekends_validate) - trips_per_day_for_weekends_validate$num_trips)^2))
+}
+train_err
+validate_err
+# plot the training and validation error as a function of polynomial degree
+plot_data <- data.frame(K, train_err, validate_err) %>%
+  gather("split", "error", -K)
+ggplot(plot_data, aes(x=K, y=error, color=split)) +
+  geom_line() +
+  scale_x_continuous(breaks=K) +
+  xlab('Polynomial Degree') +
+  ylab('RMSE')
+
+
+# model for degree 5 polynomial
+model_wknd5 <- lm(num_trips ~ poly(tmin, 5, raw=T) + aWeekend, data=trips_per_day_for_weekends_train)
+# train model
+trips_per_day_for_weekends_train <- trips_per_day_for_weekends_train %>%
+  add_predictions(model_wknd5) %>%
+  mutate(split="train")
+# validate model
+trips_per_day_for_weekends_validate <- trips_per_day_for_weekends_validate %>%
+  add_predictions(model_wknd5) %>%
+  mutate(split="validate")
+# plot the training data and validation data with the model
+plot_data <- bind_rows(trips_per_day_for_weekends_train, trips_per_day_for_weekends_validate)
+ggplot(plot_data, aes(x=ymd, y=num_trips, color=aWeekend)) +
+  geom_point() +
+  geom_line(aes(y=pred)) +
+  xlab("YMD") +
+  ylab('Daily trips') +
+  scale_y_continuous()
+# actual vs. predicted
+ggplot(plot_data, aes(x=pred, y=num_trips, color=split)) +
+  geom_point() +
+  geom_abline() +
+  scale_x_continuous("Predicted Number of Trips", label=comma) +
+  scale_y_continuous("Actual Number of Trips", label=comma)
+
+
+rmse(model_wknd5,trips_per_day_train)
+rmse(model_wknd5,trips_per_day_validate)
+# test the model
+test_err <- sqrt(mean((predict(model_wknd5, trips_per_day_for_weekends_test) - trips_per_day_for_weekends_test$num_trips)^2))
+test_err
